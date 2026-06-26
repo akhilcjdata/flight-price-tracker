@@ -251,21 +251,25 @@ def format_telegram_alert(route_name, offers, threshold, travel_date):
     return "\n".join(lines)
 
 
+# ── Load secrets from Streamlit Cloud ────────────────────────────────────────
+serpapi_key = st.secrets.get("SERPAPI_KEY", "")
+tg_token = st.secrets.get("TELEGRAM_TOKEN", "")
+tg_chat_id = st.secrets.get("TELEGRAM_CHAT_ID", "")
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### ⚙️ Configuration")
 
-    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.markdown("**🔑 Serpapi Key**")
-    serpapi_key = st.text_input("API Key", type="password", placeholder="Your Serpapi private API key")
-    st.markdown("Get your key at [serpapi.com/manage-api-key](https://serpapi.com/manage-api-key)")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Show a green tick if keys are loaded from secrets
+    if serpapi_key:
+        st.markdown("✅ **Serpapi key loaded from secrets**")
+    else:
+        st.warning("⚠️ SERPAPI_KEY not found in secrets!")
 
-    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.markdown("**📱 Telegram Alerts**")
-    tg_token = st.text_input("Bot Token", type="password", placeholder="123456:ABC-DEF...")
-    tg_chat_id = st.text_input("Chat ID", placeholder="Your Telegram chat ID")
-    st.markdown("</div>", unsafe_allow_html=True)
+    if tg_token and tg_chat_id:
+        st.markdown("✅ **Telegram configured from secrets**")
+    else:
+        st.info("ℹ️ Add TELEGRAM_TOKEN & TELEGRAM_CHAT_ID to secrets for alerts")
 
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.markdown("**🗓️ Search Settings**")
@@ -285,15 +289,6 @@ with st.sidebar:
 
     check_now = st.button("🔍 Check Prices Now", use_container_width=True)
 
-    st.markdown("---")
-    st.markdown("**📋 Setup Guide**")
-    st.markdown("""
-1. Get Serpapi key at [serpapi.com](https://serpapi.com)
-2. Create Telegram bot via [@BotFather](https://t.me/BotFather)
-3. Get your Chat ID from [@userinfobot](https://t.me/userinfobot)
-4. Enter keys above & click Check Prices!
-    """)
-
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -308,7 +303,7 @@ thresholds = {"MCT-COK": threshold_kochi, "MCT-TRV": threshold_trv}
 # ── Fetch on button click ─────────────────────────────────────────────────────
 if check_now:
     if not serpapi_key:
-        st.error("Please enter your Serpapi API Key in the sidebar.")
+        st.error("SERPAPI_KEY not found! Please add it to your Streamlit secrets.")
     else:
         date_str = search_date.strftime("%Y-%m-%d")
         with st.spinner("Fetching live prices from Google Flights..."):
@@ -369,7 +364,7 @@ if not st.session_state.results:
     st.markdown("""
     <div class="no-results">
         <div style="font-size:3rem">✈️</div>
-        <div style="color:#7a9cc4; font-size:1rem; margin-top:12px">Enter your Serpapi key and click <b>Check Prices Now</b></div>
+        <div style="color:#7a9cc4; font-size:1rem; margin-top:12px">Select your travel date and click <b>Check Prices Now</b></div>
         <div style="color:#475569; margin-top:6px">Live prices from Google Flights will appear here</div>
     </div>
     """, unsafe_allow_html=True)
